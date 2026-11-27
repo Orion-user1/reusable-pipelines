@@ -1,5 +1,4 @@
 
-
 pipeline:
   name: Application Delivery Orchestrator
   identifier: app_delivery_orchestrator
@@ -7,8 +6,8 @@ pipeline:
     Central orchestrator for application build, package,
     containerize, release tagging and release promotion.
 
-  projectIdentifier: <+project.identifier>
-  orgIdentifier: <+org.identifier>
+  orgIdentifier: default
+  projectIdentifier: Harness_demo
 
   tags:
     managed-by: pipeline-orchestrator
@@ -53,8 +52,8 @@ pipeline:
           stageStatus: Success
           condition: <+pipeline.variables.run_build_verify> == "true"
         spec:
-          org: <+org.identifier>
-          project: <+project.identifier>
+          org: default
+          project: Harness_demo
           pipeline: harness_app_build_verify_v2
           inputs:
             identifier: harness_app_build_verify_v2
@@ -72,8 +71,8 @@ pipeline:
           stageStatus: Success
           condition: <+pipeline.variables.run_package_publish> == "true"
         spec:
-          org: <+org.identifier>
-          project: <+project.identifier>
+          org: default
+          project: Harness_demo
           pipeline: cicd_app_package_and_publish
           inputs:
             identifier: cicd_app_package_and_publish
@@ -87,8 +86,8 @@ pipeline:
           stageStatus: Success
           condition: <+pipeline.variables.run_containerize> == "true"
         spec:
-          org: <+org.identifier>
-          project: <+project.identifier>
+          org: default
+          project: Harness_demo
           pipeline: App-containerize
           inputs:
             identifier: App-containerize
@@ -102,8 +101,8 @@ pipeline:
           stageStatus: Success
           condition: <+pipeline.variables.run_release_tag> == "true"
         spec:
-          org: <+org.identifier>
-          project: <+project.identifier>
+          org: default
+          project: Harness_demo
           pipeline: cicd_app_release_tag
           inputs:
             identifier: cicd_app_release_tag
@@ -117,8 +116,8 @@ pipeline:
           stageStatus: Success
           condition: <+pipeline.variables.run_release_promotion> == "true" && <+pipeline.variables.run_release_tag> == "true"
         spec:
-          org: <+org.identifier>
-          project: <+project.identifier>
+          org: default
+          project: Harness_demo
           pipeline: cicd_release_promotion_trigger
           inputs:
             identifier: cicd_release_promotion_trigger
