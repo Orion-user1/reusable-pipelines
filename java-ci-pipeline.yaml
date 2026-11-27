@@ -1,124 +1,64 @@
-
 pipeline:
+  id: app_delivery_orchestrator
   name: Application Delivery Orchestrator
-  identifier: app_delivery_orchestrator
   description: >-
     Central orchestrator for application build, package,
     containerize, release tagging and release promotion.
-
-  orgIdentifier: default
-  projectIdentifier: Harness_demo
-
-  tags:
-    managed-by: pipeline-orchestrator
-
-  variables:
-    - name: app_branch
-      type: String
-      description: Application branch received from entry pipeline.
-      value: <+input>
-
-    - name: run_build_verify
-      type: String
-      description: Run application build and verification.
-      value: <+input>.default(true)
-
-    - name: run_package_publish
-      type: String
-      description: Run package and publish.
-      value: <+input>.default(true)
-
-    - name: run_containerize
-      type: String
-      description: Run containerization.
-      value: <+input>.default(true)
-
-    - name: run_release_tag
-      type: String
-      description: Run release tagging after approval.
-      value: <+input>.default(false)
-
-    - name: run_release_promotion
-      type: String
-      description: Run GitOps release promotion.
-      value: <+input>.default(false)
-
+  inputs:
+    app_branch:
+      type: string
+      desc: Application branch received from entry pipeline.
+      required: true
+    run_build_verify:
+      type: string
+      default: "true"
+      desc: Run application build and verification.
+    run_package_publish:
+      type: string
+      default: "true"
+      desc: Run package and publish.
+    run_containerize:
+      type: string
+      default: "true"
+      desc: Run containerization.
+    run_release_tag:
+      type: string
+      default: "false"
+      desc: Run release tagging after approval.
+    run_release_promotion:
+      type: string
+      default: "false"
+      desc: Run GitOps release promotion.
   stages:
-    - stage:
-        name: Build and Verify
-        identifier: build_and_verify
-        type: Pipeline
-        when:
-          stageStatus: Success
-          condition: <+pipeline.variables.run_build_verify> == "true"
-        spec:
-          org: default
-          project: Harness_demo
-          pipeline: harness_app_build_verify_v2
+    - id: build_and_verify
+      name: Build and Verify
+      if: <+OnPipelineSuccess> && '<+inputs.run_build_verify>' == 'true'
+      chain:
+        uses: default/Harness_demo/harness_app_build_verify_v2
+        with:
           inputs:
-            identifier: harness_app_build_verify_v2
-            variables:
-              - name: branch
-                type: String
-                value: <+pipeline.variables.app_branch>
-          outputs: []
+            branch: ${{ inputs.app_branch }}
 
-    - stage:
-        name: Package and Publish
-        identifier: package_and_publish
-        type: Pipeline
-        when:
-          stageStatus: Success
-          condition: <+pipeline.variables.run_package_publish> == "true"
-        spec:
-          org: default
-          project: Harness_demo
-          pipeline: cicd_app_package_and_publish
-          inputs:
-            identifier: cicd_app_package_and_publish
-          outputs: []
+    - id: package_and_publish
+      name: Package and Publish
+      if: <+OnPipelineSuccess> && '<+inputs.run_package_publish>' == 'true'
+      chain:
+        uses: default/Harness_demo/cicd_app_package_and_publish
 
-    - stage:
-        name: Containerize
-        identifier: containerize
-        type: Pipeline
-        when:
-          stageStatus: Success
-          condition: <+pipeline.variables.run_containerize> == "true"
-        spec:
-          org: default
-          project: Harness_demo
-          pipeline: App-containerize
-          inputs:
-            identifier: App-containerize
-          outputs: []
+    - id: containerize
+      name: Containerize
+      if: <+OnPipelineSuccess> && '<+inputs.run_containerize>' == 'true'
+      chain:
+        uses: default/Harness_demo/App-containerize
 
-    - stage:
-        name: Release Tag
-        identifier: release_tag
-        type: Pipeline
-        when:
-          stageStatus: Success
-          condition: <+pipeline.variables.run_release_tag> == "true"
-        spec:
-          org: default
-          project: Harness_demo
-          pipeline: cicd_app_release_tag
-          inputs:
-            identifier: cicd_app_release_tag
-          outputs: []
+    - id: release_tag
+      name: Release Tag
+      if: <+OnPipelineSuccess> && '<+inputs.run_release_tag>' == 'true'
+      chain:
+        uses: default/Harness_demo/cicd_app_release_tag
 
-    - stage:
-        name: Release Promotion
-        identifier: release_promotion
-        type: Pipeline
-        when:
-          stageStatus: Success
-          condition: <+pipeline.variables.run_release_promotion> == "true" && <+pipeline.variables.run_release_tag> == "true"
-        spec:
-          org: default
-          project: Harness_demo
-          pipeline: cicd_release_promotion_trigger
-          inputs:
-            identifier: cicd_release_promotion_trigger
-          outputs: []
+    - id: release_promotion
+      name: Release Promotion
+      if: <+OnPipelineSuccess> && '<+inputs.run_release_promotion>' == 'true' && '<+inputs.run_release_tag>' == 'true'
+      chain:
+        uses: default/Harness_demo/cicd_release_promotion_trigger
