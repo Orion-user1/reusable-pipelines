@@ -1,1 +1,125 @@
 
+
+pipeline:
+  name: Application Delivery Orchestrator
+  identifier: app_delivery_orchestrator
+  description: >-
+    Central orchestrator for application build, package,
+    containerize, release tagging and release promotion.
+
+  projectIdentifier: <+project.identifier>
+  orgIdentifier: <+org.identifier>
+
+  tags:
+    managed-by: pipeline-orchestrator
+
+  variables:
+    - name: app_branch
+      type: String
+      description: Application branch received from entry pipeline.
+      value: <+input>
+
+    - name: run_build_verify
+      type: String
+      description: Run application build and verification.
+      value: <+input>.default(true)
+
+    - name: run_package_publish
+      type: String
+      description: Run package and publish.
+      value: <+input>.default(true)
+
+    - name: run_containerize
+      type: String
+      description: Run containerization.
+      value: <+input>.default(true)
+
+    - name: run_release_tag
+      type: String
+      description: Run release tagging after approval.
+      value: <+input>.default(false)
+
+    - name: run_release_promotion
+      type: String
+      description: Run GitOps release promotion.
+      value: <+input>.default(false)
+
+  stages:
+    - stage:
+        name: Build and Verify
+        identifier: build_and_verify
+        type: Pipeline
+        when:
+          stageStatus: Success
+          condition: <+pipeline.variables.run_build_verify> == "true"
+        spec:
+          org: <+org.identifier>
+          project: <+project.identifier>
+          pipeline: harness_app_build_verify_v2
+          inputs:
+            identifier: harness_app_build_verify_v2
+            variables:
+              - name: branch
+                type: String
+                value: <+pipeline.variables.app_branch>
+          outputs: []
+
+    - stage:
+        name: Package and Publish
+        identifier: package_and_publish
+        type: Pipeline
+        when:
+          stageStatus: Success
+          condition: <+pipeline.variables.run_package_publish> == "true"
+        spec:
+          org: <+org.identifier>
+          project: <+project.identifier>
+          pipeline: cicd_app_package_and_publish
+          inputs:
+            identifier: cicd_app_package_and_publish
+          outputs: []
+
+    - stage:
+        name: Containerize
+        identifier: containerize
+        type: Pipeline
+        when:
+          stageStatus: Success
+          condition: <+pipeline.variables.run_containerize> == "true"
+        spec:
+          org: <+org.identifier>
+          project: <+project.identifier>
+          pipeline: cicd_app_containerize
+          inputs:
+            identifier: cicd_app_containerize
+          outputs: []
+
+    - stage:
+        name: Release Tag
+        identifier: release_tag
+        type: Pipeline
+        when:
+          stageStatus: Success
+          condition: <+pipeline.variables.run_release_tag> == "true"
+        spec:
+          org: <+org.identifier>
+          project: <+project.identifier>
+          pipeline: cicd_app_release_tag
+          inputs:
+            identifier: cicd_app_release_tag
+          outputs: []
+
+    - stage:
+        name: Release Promotion
+        identifier: release_promotion
+        type: Pipeline
+        when:
+          stageStatus: Success
+          condition: <+pipeline.variables.run_release_promotion> == "true" && <+pipeline.variables.run_release_tag> == "true"
+        spec:
+          org: <+org.identifier>
+          project: <+project.identifier>
+          pipeline: cicd_release_promotion_trigger
+          inputs:
+            identifier: cicd_release_promotion_trigger
+          outputs: []
