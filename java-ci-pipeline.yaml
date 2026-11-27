@@ -89,9 +89,9 @@ pipeline:
         spec:
           org: <+org.identifier>
           project: <+project.identifier>
-          pipeline: cicd_app_containerize
+          pipeline: App-containerize
           inputs:
-            identifier: cicd_app_containerize
+            identifier: App-containerize
           outputs: []
 
     - stage:
